@@ -4,7 +4,7 @@ import { useSocket } from "../hooks/useSocket";
 export default function Chat() {
     const [message, setMessage] = useState("");
     const [messages, setMessages] = useState<string[]>([]);
-    const { socket, isConnected } = useSocket(`http://localhost:${import.meta.env.VITE_SERVER_PORT || 8003}`);
+    const { socket } = useSocket(`http://localhost:${import.meta.env.VITE_SERVER_PORT || 8003}`);
 
     useEffect(() => {
         if (!socket) return;
@@ -25,32 +25,21 @@ export default function Chat() {
         setMessage("");
     };
 
-    const joinRoom = (roomId: string) => {
-        if (!socket) return;
-        socket.emit("join-room", roomId);
-    };
-
     return (
         <div>
             <h2>Socket Chat</h2>
-            <p>Status: {isConnected ? "Connected" : "Disconnected"}</p>
-
             <div>
                 {messages.map((msg, index) => (
                     <p key={index}>{msg}</p>
                 ))}
             </div>
-
             <input
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && sendMessage()}
                 placeholder="Type a message..."
             />
             <button onClick={sendMessage}>Send</button>
-
-            <button onClick={() => joinRoom("room1")}>Join Room 1</button>
         </div>
     );
 }

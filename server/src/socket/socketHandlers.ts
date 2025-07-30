@@ -2,7 +2,7 @@ import { Socket } from "socket.io";
 import { GameService } from "../services/GameService";
 import { PlayerService } from "../services/PlayerService";
 
-async function handleCreateGame(socket: Socket, gameService: GameService, playerService: PlayerService) {
+function handleCreateGame(socket: Socket, gameService: GameService, playerService: PlayerService) {
     return async (data: any, callback: Function) => {
         try {
             const { playerName } = data;
@@ -33,7 +33,7 @@ async function handleCreateGame(socket: Socket, gameService: GameService, player
     };
 }
 
-async function handleJoinGame(socket: Socket, gameService: GameService, playerService: PlayerService) {
+function handleJoinGame(socket: Socket, gameService: GameService, playerService: PlayerService) {
     return async (data: any, callback: Function) => {
         try {
             const { gameCode, playerName } = data;
@@ -68,7 +68,7 @@ async function handleJoinGame(socket: Socket, gameService: GameService, playerSe
     };
 }
 
-async function handleStartGame(socket: Socket, gameService: GameService, playerService: PlayerService) {
+function handleStartGame(socket: Socket, gameService: GameService, playerService: PlayerService) {
     return async (data: any, callback: Function) => {
         try {
             const { gameCode } = data;
@@ -157,9 +157,9 @@ function handleReconnect(socket: Socket, gameService: GameService, playerService
 
 export function registerGameHandlers(socket: Socket, gameService: GameService, playerService: PlayerService) {
     // Lobby events
-    socket.on("create-game", () => handleCreateGame(socket, gameService, playerService));
-    socket.on("join-game", () => handleJoinGame(socket, gameService, playerService));
-    socket.on("start-game", () => handleStartGame(socket, gameService, playerService));
+    socket.on("create-game", handleCreateGame(socket, gameService, playerService));
+    socket.on("join-game", handleJoinGame(socket, gameService, playerService));
+    socket.on("start-game", handleStartGame(socket, gameService, playerService));
 
     // Game action events (to be added later)
     // socket.on("challenge", handleChallenge(socket, gameService, playerService));

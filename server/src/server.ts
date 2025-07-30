@@ -4,6 +4,9 @@ import { Server } from "socket.io";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
+import { PlayerService } from "./services/PlayerService";
+import { GameService } from "./services/GameService";
+import { registerGameHandlers } from "./socket/socketHandlers";
 
 dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 dotenv.config({ path: path.resolve(__dirname, "../../.env.local") });
@@ -25,6 +28,10 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
+// Initialize services
+const playerService = new PlayerService();
+const gameService = new GameService();
+
 // Basic routes
 app.get("/health", (req, res) => {
     res.json({ status: "Server is running!" });
@@ -32,21 +39,11 @@ app.get("/health", (req, res) => {
 
 // Socket.io handling
 io.on("connection", (socket) => {
-    console.log("User connected: ", socket.id);
+    registerGameHandlers(socket, gameService, playerService);
 
     socket.on("message", (data) => {
         console.log("Received message:", data);
         socket.emit("message", { message: `Server received: ${data.message}` });
-    });
-
-    socket.on("join-room", (roomId) => {
-        console.log(`user ${socket.id} is joining room ${roomId}`);
-        socket.join(roomId);
-        socket.to(roomId).emit("user-joined", socket.id);
-    });
-
-    socket.on("disconnect", () => {
-        console.log("User disconnected:", socket.id);
     });
 });
 
