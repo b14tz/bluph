@@ -1,143 +1,57 @@
-/*
-map player to game
-map player to socket
-reconnect player to existing game
-remove player properly
-*/
-
-export interface PlayerProfile {
-    id: string;
-    name: string;
-    gamesPlayed: number;
-    wins: number;
-    currentGameId: string | null;
-    socketId: string | null;
-}
+import { Player } from "../game/Player";
 
 export class PlayerService {
-    private playerProfiles = new Map<string, PlayerProfile>();
-    private playerSockets = new Map<string, string>(); // playerId -> socketId
-    private socketPlayers = new Map<string, string>(); // socketId -> playerId
+    private players = new Map<string, Player>();
+    private socketToPlayer = new Map<string, string>(); // socketId -> playerId
+    private playerToGame = new Map<string, string>(); // playerId -> gameCode
 
-    /**
-     * Register a new player or update existing player's socket
-     */
-    registerPlayer(playerId: string, playerName: string, socketId: string): PlayerProfile {
-        let profile = this.playerProfiles.get(playerId);
-
-        if (!profile) {
-            profile = {
-                id: playerId,
-                name: playerName,
-                gamesPlayed: 0,
-                wins: 0,
-                currentGameId: null,
-                socketId: socketId,
-            };
-            this.playerProfiles.set(playerId, profile);
-        } else {
-            // Update socket info for returning player
-            profile.socketId = socketId;
-        }
-
-        this.playerSockets.set(playerId, socketId);
-        this.socketPlayers.set(socketId, playerId);
-
-        return profile;
+    public createPlayer(name: string, socketId: string): Player {
+        const playerId = crypto.randomUUID();
+        const player = new Player(playerId, name, socketId);
+        this.players.set(playerId, player);
+        this.socketToPlayer.set(socketId, playerId);
+        return player;
     }
 
-    /**
-     * Get player profile by ID
-     */
-    getPlayer(playerId: string): PlayerProfile | null {
-        return this.playerProfiles.get(playerId) || null;
+    public getPlayerBySocket(socketId: string): Player | null {
+        const playerId = this.socketToPlayer.get(socketId);
+        return playerId ? this.players.get(playerId) || null : null;
     }
 
-    /**
-     * Get player ID by socket ID
-     */
-    getPlayerBySocket(socketId: string): string | null {
-        return this.socketPlayers.get(socketId) || null;
-    }
-
-    /**
-     * Get socket ID by player ID
-     */
-    getPlayerSocket(playerId: string): string | null {
-        return this.playerSockets.get(playerId) || null;
-    }
-
-    /**
-     * Add player to a game
-     */
-    addPlayerToGame(playerId: string, gameId: string): boolean {
-        const player = this.playerProfiles.get(playerId);
-        if (!player) return false;
-
-        if (player.currentGameId && player.currentGameId !== gameId) {
-            // Player is already in another game
-            return false;
-        }
-
-        player.currentGameId = gameId;
-        return true;
-    }
-
-    /**
-     * Remove player from their current game
-     */
-    removePlayerFromGame(playerId: string): void {
-        const player = this.playerProfiles.get(playerId);
+    public updatePlayerSocket(playerId: string, newSocketId: string): void {
+        const player = this.players.get(playerId);
         if (player) {
-            player.currentGameId = null;
+            // Remove old socket mapping
+            this.socketToPlayer.delete(player.socketId);
+            // Update player and add new mapping
+            player.socketId = newSocketId;
+            this.socketToPlayer.set(newSocketId, playerId);
         }
     }
 
-    /**
-     * Get all players in a specific game
-     */
-    getPlayersInGame(gameId: string): PlayerProfile[] {
-        const playersInGame: PlayerProfile[] = [];
-
-        for (const player of this.playerProfiles.values()) {
-            if (player.currentGameId === gameId) {
-                playersInGame.push(player);
-            }
-        }
-
-        return playersInGame;
-    }
-
-    /**
-     * Update player stats after game completion
-     */
-    updatePlayerStats(playerId: string, won: boolean): void {
-        const player = this.playerProfiles.get(playerId);
+    public removePlayer(playerId: string): void {
+        const player = this.players.get(playerId);
         if (player) {
-            player.gamesPlayed++;
-            if (won) {
-                player.wins++;
-            }
-            player.currentGameId = null;
+            this.socketToPlayer.delete(player.socketId);
+            this.players.delete(playerId);
         }
     }
 
-    /**
-     * Clean up player on disconnect
-     */
-    disconnectPlayer(socketId: string): string | undefined {
-        const playerId = this.socketPlayers.get(socketId);
+    public setPlayerGame(playerId: string, gameCode: string): void {
+        this.playerToGame.set(playerId, gameCode);
+    }
 
-        if (playerId) {
-            const player = this.playerProfiles.get(playerId);
-            if (player) {
-                player.socketId = null;
-            }
+    public getPlayerGameCode(playerId: string): string | null {
+        return this.playerToGame.get(playerId) || null;
+    }
 
-            this.playerSockets.delete(playerId);
-            this.socketPlayers.delete(socketId);
-        }
+    public removePlayerFromGame(playerId: string): void {
+        this.playerToGame.delete(playerId);
+    }
 
-        return playerId;
+    public getPlayersInGame(gameCode: string): string[] {
+        return Array.from(this.playerToGame.entries())
+            .filter(([_, code]) => code === gameCode)
+            .map(([playerId, _]) => playerId);
     }
 }

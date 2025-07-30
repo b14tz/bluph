@@ -1,10 +1,11 @@
 import { Card, GameAction, GamePhase, PendingAction } from "../types/shared";
 import { createDeck, shuffleDeck } from "../utils/cardUtils";
 import { Player } from "./Player";
-import { v4 as uuidv4 } from "uuid";
 
 export class Game {
-    public readonly id: string;
+    public readonly code: string;
+    public hostPlayerId: string;
+    public lastActivityAt: Date;
     public players: Player[];
     public deck: Card[];
     public currentPlayerIndex: number;
@@ -15,8 +16,10 @@ export class Game {
     public readonly maxPlayers: number;
     public playersWhoMustLoseCard: Set<string>;
 
-    constructor(gameId?: string) {
-        this.id = gameId || uuidv4();
+    constructor(gameCode: string, hostPlayerId: string) {
+        this.code = gameCode;
+        this.hostPlayerId = hostPlayerId;
+        this.lastActivityAt = new Date();
         this.players = [];
         this.deck = [];
         this.currentPlayerIndex = 0;
@@ -69,6 +72,15 @@ export class Game {
         return true;
     }
 
+    public reconnectPlayer(playerId: string, newSocketId: string): boolean {
+        const player = this.getPlayerById(playerId);
+        if (!player) return false;
+
+        player.socketId = newSocketId;
+        player.setConnectionStatus(true);
+        return true;
+    }
+
     public startGame(): boolean {
         if (this.players.length < 2) {
             return false;
@@ -95,6 +107,19 @@ export class Game {
         this.currentPlayerIndex = 0;
 
         return true;
+    }
+
+    public getGameState(forPlayerId?: string): any {
+        return {
+            code: this.code,
+            phase: this.phase,
+            players: this.players.map((p) => (p.id === forPlayerId ? p.getPrivateState() : p.getPublicState())),
+            currentPlayerIndex: this.currentPlayerIndex,
+            currentPlayer: this.getCurrentPlayer()?.getPublicState(),
+            pendingAction: this.pendingAction,
+            deckCount: this.deck.length,
+            winner: this.getWinner()?.getPublicState(),
+        };
     }
 
     public getCurrentPlayer(): Player | null {
@@ -136,5 +161,9 @@ export class Game {
     public getWinner(): Player | null {
         const alivePlayers = this.getAlivePlayers();
         return alivePlayers.length === 1 ? alivePlayers[0] : null;
+    }
+
+    public updateActivity(): void {
+        this.lastActivityAt = new Date();
     }
 }

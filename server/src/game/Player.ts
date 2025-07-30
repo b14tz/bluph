@@ -2,19 +2,23 @@ import { Card, CardType, PlayerState } from "../types/shared";
 
 export class Player {
     public readonly id: string;
+    public socketId: string;
+    public lastSeenAt: Date;
+    public isConnected: boolean;
     public name: string;
     public cards: Card[];
     public coins: number;
     public isAlive: boolean;
-    public isConnected: boolean;
 
-    constructor(id: string, name: string) {
+    constructor(id: string, name: string, socketId: string) {
         this.id = id;
+        this.socketId = socketId;
+        this.lastSeenAt = new Date();
+        this.isConnected = true;
         this.name = name;
         this.cards = [];
         this.coins = 2; // starting coins
         this.isAlive = true;
-        this.isConnected = true;
     }
 
     public addCard(card: Card): void {
@@ -107,5 +111,15 @@ export class Player {
         }
 
         return { canPerform: true };
+    }
+
+    public updateLastSeen(): void {
+        this.lastSeenAt = new Date();
+    }
+
+    public isTimedOut(timeoutMinutes: number = 5): boolean {
+        const now = new Date();
+        const timeSinceLastSeen = now.getTime() - this.lastSeenAt.getTime();
+        return timeSinceLastSeen > timeoutMinutes * 60 * 1000;
     }
 }
