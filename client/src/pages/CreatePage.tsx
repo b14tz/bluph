@@ -1,9 +1,10 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { useSocket } from "../hooks/useSocket";
 import type { GameState, PublicPlayerState } from "../../../shared/types";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-export default function CreateGamePage() {
+export default function CreatePage() {
+    const navigate = useNavigate();
     const { socket } = useSocket(`http://localhost:${import.meta.env.VITE_SERVER_PORT || 8003}`);
     const [name, setName] = useState<string>("");
     const [gameCode, setGameCode] = useState<string>("");
@@ -37,6 +38,12 @@ export default function CreateGamePage() {
 
     const startGame = () => {
         console.log("handle start game here!");
+        if (!socket) return;
+        socket.emit("start-game", { gameCode: gameCode }, (response: { success: boolean }) => {
+            if (response.success) {
+                navigate("/game");
+            }
+        });
     };
 
     return gameCode ? (

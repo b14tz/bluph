@@ -1,9 +1,10 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { useSocket } from "../hooks/useSocket";
 import type { GameState } from "../../../shared/types";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-export default function JoinGamePage() {
+export default function JoinPage() {
+    const navigate = useNavigate();
     const { socket } = useSocket(`http://localhost:${import.meta.env.VITE_SERVER_PORT || 8003}`);
     const [name, setName] = useState<string>("");
     const [gameCode, setGameCode] = useState<string>("");
@@ -17,8 +18,13 @@ export default function JoinGamePage() {
             console.log(`player joined - ${data}`);
         });
 
+        socket.on("game-started", () => {
+            navigate("/game");
+        });
+
         return () => {
             socket.off("player-joined");
+            socket.off("game-started");
         };
     }, [socket]);
 
