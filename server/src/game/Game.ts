@@ -1,4 +1,4 @@
-import { Card, GameAction, GamePhase, PendingAction } from "../types/shared";
+import { Card, GameAction, GamePhase, GameState, PendingAction } from "../../../shared/types";
 import { createDeck, shuffleDeck } from "../utils/cardUtils";
 import { Player } from "./Player";
 
@@ -109,16 +109,20 @@ export class Game {
         return true;
     }
 
-    public getGameState(forPlayerId?: string): any {
+    public getGameState(forPlayerId?: string): GameState {
         return {
             code: this.code,
             phase: this.phase,
-            players: this.players.map((p) => (p.id === forPlayerId ? p.getPrivateState() : p.getPublicState())),
+            players: this.players.map((p) => p.getPrivateState()),
             currentPlayerIndex: this.currentPlayerIndex,
             currentPlayer: this.getCurrentPlayer()?.getPublicState(),
             pendingAction: this.pendingAction,
-            deckCount: this.deck.length,
+            deck: this.deck,
             winner: this.getWinner()?.getPublicState(),
+            actionHistory: this.actionHistory,
+            createdAt: this.createdAt,
+            maxPlayers: this.maxPlayers,
+            hostPlayerId: this.hostPlayerId,
         };
     }
 

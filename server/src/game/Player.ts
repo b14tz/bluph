@@ -1,4 +1,4 @@
-import { Card, CardType, PlayerState } from "../types/shared";
+import { Card, CardType, PlayerState, PublicPlayerState } from "../../../shared/types";
 
 export class Player {
     public readonly id: string;
@@ -70,7 +70,7 @@ export class Player {
         return this.coins >= 10;
     }
 
-    public getPublicState(): Omit<PlayerState, "cards"> & { cardCount: number } {
+    public getPublicState(): PublicPlayerState {
         return {
             id: this.id,
             name: this.name,

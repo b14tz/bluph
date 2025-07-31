@@ -1,6 +1,6 @@
 import { Game } from "../game/Game";
 import { Player } from "../game/Player";
-import { GamePhase } from "../types/shared";
+import { GamePhase } from "../../../shared/types";
 export class GameService {
     private games = new Map<string, Game>();
 

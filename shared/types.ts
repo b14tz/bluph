@@ -50,7 +50,7 @@ export interface PendingAction {
     challengeableBy: string[];
     blockableBy: string[];
     responses: Map<string, ResponseType>;
-    timeoutId?: NodeJS.Timeout;
+    timeoutId?: any; // change later
     timeoutDuration: number;
     canBlock: boolean;
     canChallenge: boolean;
@@ -81,14 +81,19 @@ export interface PlayerState {
     isConnected: boolean;
 }
 
+export type PublicPlayerState = Omit<PlayerState, "cards"> & { cardCount: number };
+
 export interface GameState {
-    id: string;
+    code: string;
     players: PlayerState[];
     deck: Card[];
     currentPlayerIndex: number;
+    currentPlayer: PublicPlayerState | undefined;
     phase: GamePhase;
     pendingAction: PendingAction | null;
     actionHistory: GameAction[];
     createdAt: Date;
     maxPlayers: number;
+    winner: PublicPlayerState | undefined;
+    hostPlayerId: string;
 }

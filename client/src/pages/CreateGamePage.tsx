@@ -1,0 +1,88 @@
+import { useEffect, useState, type ChangeEvent } from "react";
+import { useSocket } from "../hooks/useSocket";
+import type { GameState, PublicPlayerState } from "../../../shared/types";
+import { Link } from "react-router-dom";
+
+export default function CreateGamePage() {
+    const { socket } = useSocket(`http://localhost:${import.meta.env.VITE_SERVER_PORT || 8003}`);
+    const [name, setName] = useState<string>("");
+    const [gameCode, setGameCode] = useState<string>("");
+    const [gameState, setGameState] = useState<GameState>();
+
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.on("player-joined", (data: { _gamePlayer: PublicPlayerState; gameState: GameState }) => {
+            setGameState(data.gameState);
+            console.log(`player joined - ${data.gameState}`);
+        });
+
+        return () => {
+            socket.off("player-joined");
+        };
+    }, [socket]);
+
+    const createGame = () => {
+        if (!socket || !name) return;
+        socket.emit(
+            "create-game",
+            { playerName: name },
+            (response: { success: boolean; gameCode: string; gameState: GameState }) => {
+                setGameCode(response.gameCode);
+                setGameState(response.gameState);
+                console.log("Create game response:", response);
+            }
+        );
+    };
+
+    const startGame = () => {
+        console.log("handle start game here!");
+    };
+
+    return gameCode ? (
+        <div className="mt-40 flex flex-col items-center space-y-4 w-60 m-auto">
+            <Link to="/" className="text-[100px]">
+                bluph
+            </Link>
+
+            <div className="flex space-x-2 items-center">
+                <p>game code:</p>
+                <input type="text" value={gameCode} disabled className="border-1 w-24 text-center p-2 rounded-md" />
+            </div>
+
+            <hr className="w-full" />
+
+            {gameState?.players && (
+                <div className="flex flex-col space-y-2 w-full">
+                    {gameState.players.map((player, index) => (
+                        <div key={player.id || index} className="border-1 p-2 rounded-md">
+                            {player.name} {gameState.hostPlayerId == player.id && "(host)"}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <button onClick={startGame} className="bg-black text-white w-full p-2 rounded-md">
+                start
+            </button>
+        </div>
+    ) : (
+        <div className="mt-40 flex flex-col items-center space-y-2">
+            <Link to="/" className="text-[100px]">
+                bluph
+            </Link>
+            <div className="flex space-x-4">
+                <input
+                    type="text"
+                    value={name}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+                    placeholder="username"
+                    className="border-1 rounded-md p-2"
+                />
+                <button onClick={createGame} className="border-1 p-2 rounded-md">
+                    Create Game
+                </button>
+            </div>
+        </div>
+    );
+}

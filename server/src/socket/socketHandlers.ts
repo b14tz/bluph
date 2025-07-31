@@ -52,7 +52,10 @@ function handleJoinGame(socket: Socket, gameService: GameService, playerService:
             if (game.addPlayer(player)) {
                 playerService.setPlayerGame(player.id, gameCode);
                 socket.join(gameCode);
-                socket.to(gameCode).emit("player-joined", player.getPublicState());
+                socket.to(gameCode).emit("player-joined", {
+                    player: player.getPublicState(),
+                    gameState: game.getGameState(),
+                });
 
                 callback({
                     success: true,

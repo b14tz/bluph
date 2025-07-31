@@ -8,8 +8,7 @@
         "strict": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "outDir": "./dist",
-        "rootDir": "./src"
+        "outDir": "./dist"
     },
     "ts-node": {
         "esm": true
