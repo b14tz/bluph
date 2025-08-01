@@ -1,20 +1,21 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { useSocket } from "../hooks/useSocket";
-import type { GameState, PublicPlayerState } from "../../../shared/types";
+import type { GameState, PlayerState, PublicPlayerState } from "../../../shared/types";
 import { Link, useNavigate } from "react-router-dom";
+import { useGame } from "../context/GameContext";
 
 export default function CreatePage() {
     const navigate = useNavigate();
     const { socket } = useSocket(`http://localhost:${import.meta.env.VITE_SERVER_PORT || 8003}`);
     const [name, setName] = useState<string>("");
     const [gameCode, setGameCode] = useState<string>("");
-    const [gameState, setGameState] = useState<GameState>();
+    const { gameData, setPlayerData, setGameData } = useGame();
 
     useEffect(() => {
         if (!socket) return;
 
         socket.on("player-joined", (data: { _gamePlayer: PublicPlayerState; gameState: GameState }) => {
-            setGameState(data.gameState);
+            setGameData(data.gameState);
             console.log(`player joined - ${data.gameState}`);
         });
 
@@ -28,9 +29,10 @@ export default function CreatePage() {
         socket.emit(
             "create-game",
             { playerName: name },
-            (response: { success: boolean; gameCode: string; gameState: GameState }) => {
+            (response: { success: boolean; gameCode: string; gameState: GameState; playerState: PlayerState }) => {
                 setGameCode(response.gameCode);
-                setGameState(response.gameState);
+                setGameData(response.gameState);
+                setPlayerData(response.playerState);
                 console.log("Create game response:", response);
             }
         );
@@ -59,11 +61,11 @@ export default function CreatePage() {
 
             <hr className="w-full" />
 
-            {gameState?.players && (
+            {gameData?.players && (
                 <div className="flex flex-col space-y-2 w-full">
-                    {gameState.players.map((player, index) => (
+                    {gameData.players.map((player, index) => (
                         <div key={player.id || index} className="border-1 p-2 rounded-md">
-                            {player.name} {gameState.hostPlayerId == player.id && "(host)"}
+                            {player.name} {gameData.hostPlayerId == player.id && "(host)"}
                         </div>
                     ))}
                 </div>

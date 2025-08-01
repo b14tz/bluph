@@ -1,20 +1,21 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { useSocket } from "../hooks/useSocket";
-import type { GameState } from "../../../shared/types";
+import { type GameState, type PlayerState, type PublicPlayerState } from "../../../shared/types";
 import { Link, useNavigate } from "react-router-dom";
+import { useGame } from "../context/GameContext";
 
 export default function JoinPage() {
     const navigate = useNavigate();
     const { socket } = useSocket(`http://localhost:${import.meta.env.VITE_SERVER_PORT || 8003}`);
     const [name, setName] = useState<string>("");
     const [gameCode, setGameCode] = useState<string>("");
-    const [gameState, setGameState] = useState<GameState>();
+    const { gameData, setPlayerData, setGameData } = useGame();
 
     useEffect(() => {
         if (!socket) return;
 
-        socket.on("player-joined", (data) => {
-            setGameState(gameState);
+        socket.on("player-joined", (data: { gameState: GameState; _playerState: PublicPlayerState }) => {
+            setGameData(data.gameState);
             console.log(`player joined - ${data}`);
         });
 
@@ -33,9 +34,10 @@ export default function JoinPage() {
         socket.emit(
             "join-game",
             { playerName: name, gameCode: gameCode },
-            (response: { success: boolean; gameCode: string; gameState: GameState }) => {
+            (response: { success: boolean; gameCode: string; gameState: GameState; playerState: PlayerState }) => {
                 if (response.success) {
-                    setGameState(response.gameState);
+                    setGameData(response.gameState);
+                    setPlayerData(response.playerState);
                 } else {
                     setGameCode("");
                     console.log("Failed to join game");
@@ -50,7 +52,7 @@ export default function JoinPage() {
         console.log("handle ready up here!");
     };
 
-    return gameState?.code ? (
+    return gameData?.code ? (
         <div className="mt-40 flex flex-col items-center space-y-4 w-60 m-auto">
             <Link to="/" className="text-[100px]">
                 bluph
@@ -63,11 +65,11 @@ export default function JoinPage() {
 
             <hr className="w-full" />
 
-            {gameState?.players && (
+            {gameData?.players && (
                 <div className="flex flex-col space-y-2 w-full">
-                    {gameState.players.map((player, index) => (
+                    {gameData.players.map((player, index) => (
                         <div key={player.id || index} className="border-1 p-2 rounded-md">
-                            {player.name} {gameState.hostPlayerId == player.id && "(host)"}
+                            {player.name} {gameData.hostPlayerId == player.id && "(host)"}
                         </div>
                     ))}
                 </div>

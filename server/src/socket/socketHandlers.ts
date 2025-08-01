@@ -22,6 +22,7 @@ function handleCreateGame(socket: Socket, gameService: GameService, playerServic
                     success: true,
                     gameCode,
                     gameState: game.getGameState(player.id),
+                    playerState: player.getPrivateState(),
                 });
             } else {
                 callback({ success: false, error: "Failed to create game" });
@@ -60,6 +61,7 @@ function handleJoinGame(socket: Socket, gameService: GameService, playerService:
                 callback({
                     success: true,
                     gameState: game.getGameState(player.id),
+                    playerState: game.getPlayerById(player.id),
                 });
             } else {
                 callback({ success: false, error: "Cannot join game" });
